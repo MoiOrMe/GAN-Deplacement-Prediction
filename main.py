@@ -4,8 +4,9 @@ from preprocessing import ETHDataset
 from utils import world_to_image
 
 # path vers le dataset
-data_path = "eth.txt"
+data_path = "biwi_eth.txt"
 dataset = ETHDataset(data_path)
+print("Nombre de séquences :", len(dataset))
 sample = dataset[0]
 
 obs = sample["obs_abs"].numpy()
@@ -17,9 +18,6 @@ plt.plot(pred[:,0], pred[:,1], 'ro-', label="Future")
 plt.legend()
 plt.title("Trajectory (World coordinates)")
 plt.show()
-
-obs_img = world_to_image(obs, H)
-pred_img = world_to_image(pred, H)
 
 # A changer avec les .txt homographique en fonction de la scène
 # np.loadtxt("eth.txt")
