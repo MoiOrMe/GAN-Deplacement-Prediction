@@ -1,46 +1,39 @@
-import torch
-from torch.utils.data import Dataset
+import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-class ETHDataset(Dataset):
-    def __init__(self, data_path, obs_len=8, pred_len=12):
+import cv2
+from preprocessing import ETHDataset
+from utils import world_to_image
 
-        self.obs_len = obs_len
-        self.pred_len = pred_len
-        self.seq_len = obs_len + pred_len
+# path vers le dataset
+data_path = "Eth_Data.txt"
+dataset = ETHDataset(data_path)
+print("Nombre de séquences :", len(dataset))
+sample = dataset[0]
 
-        # Charger le fichier
-        data = pd.read_csv(
-            data_path,
-            delimiter=' ',
-            header=None,
-            names=['frame', 'ped_id', 'x', 'y']
-        )
+obs = sample["obs_abs"].numpy()
+pred = sample["pred_abs"].numpy()
 
-        self.sequences = []
+plt.figure()
+plt.plot(obs[:,0], obs[:,1], 'bo-', label="Observed")
+plt.plot(pred[:,0], pred[:,1], 'ro-', label="Future")
+plt.legend()
+plt.title("Trajectory (World coordinates)")
+plt.show()
 
-        # Grouper par piéton
-        grouped = data.groupby('ped_id')
+# A changer avec les .txt homographique en fonction de la scène
+# np.loadtxt("eth.txt")
+H = np.loadtxt("Eth_Homo.txt")
 
-        for ped_id, ped_data in grouped:
+obs_img = world_to_image(obs, H)
+pred_img = world_to_image(pred, H)
 
-            ped_data = ped_data.sort_values('frame')
-            coords = ped_data[['x','y']].values
+# Charger l'image de fond de la scène
+scene_image = cv2.imread("Eth_Bg.png")
+scene_image = cv2.cvtColor(scene_image, cv2.COLOR_BGR2RGB)
 
-            # Sliding window
-            for i in range(len(coords) - self.seq_len + 1):
-                seq = coords[i:i+self.seq_len]
-                self.sequences.append(seq)
+plt.imshow(scene_image)
+plt.plot(obs_img[:,0], obs_img[:,1], 'bo-')
+plt.plot(pred_img[:,0], pred_img[:,1], 'ro-')
+plt.title("Projection test")
+plt.show()
 
-    def __len__(self):
-        return len(self.sequences)
-
-    def __getitem__(self, idx):
-
-        seq = self.sequences[idx]
-
-        obs = seq[:self.obs_len]
-        pred = seq[self.obs_len:]
-
-        return torch.tensor(obs, dtype=torch.float32), \
-               torch.tensor(pred, dtype=torch.float32)
