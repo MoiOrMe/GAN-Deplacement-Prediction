@@ -23,3 +23,27 @@ def calculate_fde(pred, target):
     # Distance entre les deux points finaux
     fde = torch.norm(final_pred - final_target, p=2, dim=-1)
     return torch.mean(fde)
+
+#--- GAN avec k échantillons ---#
+
+# generator = GAN
+# observed_traj = les 8 pas d'observation
+# target_traj = les 12 pas réels
+# scene_features = les caractéristiques de la scène (ex: carte, obstacles)
+# k = nb traj
+
+def evaluate_gan_best_of_k(generator, observerd_traj, target_traj, scene_features, k):
+    batch_size = observed_traj.size(0)
+    best_ade = torch.full((batch_size,), float('inf'), device=observed_traj.device)
+    best_fde = torch.full((batch_size,), float('inf'), device=observed_traj.device)
+
+    for _ in range(k):
+        # utilisation de l'ADE et FDE pour évaluer les k trajectoires générées
+        pred_traj = generator(observed_traj, scene_features)
+        ade = calculate_ade(pred_traj, target_traj)
+        fde = calculate_fde(pred_traj, target_traj)
+
+        best_ade = torch.min(best_ade, ade)
+        best_fde = torch.min(best_fde, fde)
+
+    return best_ade.mean().item(), best_fde.mean().item()
