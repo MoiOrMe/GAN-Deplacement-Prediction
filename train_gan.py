@@ -120,4 +120,4 @@ if __name__ == "__main__":
     
     # Lancement de l'entraînement
     # TODO: Tu peux changer load_path="weights/gan_checkpoint.pth" si tu veux reprendre un entraînement
-    train_gan(dataloader, epochs=50, save_path="weights/gan_checkpoint.pth", load_path=None)
+    train_gan(dataloader, epochs=500, save_path="weights/gan_checkpoint.pth", load_path=None)

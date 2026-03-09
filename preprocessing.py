@@ -3,14 +3,13 @@ from torch.utils.data import Dataset
 import numpy as np
 import pandas as pd
 
-
 class ETHDataset(Dataset):
-
-    def __init__(self, data_path, obs_len=8, pred_len=12):
-
+    # Ajout du paramètre scale_factor pour normaliser les données et aider le réseau
+    def __init__(self, data_path, obs_len=8, pred_len=12, scale_factor=10.0):
         self.obs_len = obs_len
         self.pred_len = pred_len
         self.seq_len = obs_len + pred_len
+        self.scale_factor = scale_factor
 
         # Charger le fichier texte
         data = pd.read_csv(
@@ -33,9 +32,7 @@ class ETHDataset(Dataset):
         grouped = data.groupby('ped_id')
 
         for ped_id, ped_data in grouped:
-
             ped_data = ped_data.sort_values('frame')
-
             coords = ped_data[['x', 'y']].values
 
             # ignorer les trajectoires trop courtes
@@ -44,20 +41,15 @@ class ETHDataset(Dataset):
 
             # sliding window
             for i in range(len(coords) - self.seq_len + 1):
-
                 seq = coords[i:i+self.seq_len]
-
                 self.sequences.append(seq)
 
         print("Nombre total de séquences :", len(self.sequences))
 
-
     def __len__(self):
         return len(self.sequences)
 
-
     def __getitem__(self, idx):
-
         seq = self.sequences[idx]
 
         obs = seq[:self.obs_len]
@@ -69,12 +61,16 @@ class ETHDataset(Dataset):
         # coordonnées relatives
         obs_rel = obs - last_obs
         pred_rel = pred - last_obs
+        
+        # Normalisation pour éviter l'explosion des gradients
+        obs_rel_norm = obs_rel / self.scale_factor
+        pred_rel_norm = pred_rel / self.scale_factor
 
         sample = {
             "obs_abs": torch.tensor(obs, dtype=torch.float32),
             "pred_abs": torch.tensor(pred, dtype=torch.float32),
-            "obs_rel": torch.tensor(obs_rel, dtype=torch.float32),
-            "pred_rel": torch.tensor(pred_rel, dtype=torch.float32)
+            "obs_rel": torch.tensor(obs_rel_norm, dtype=torch.float32),
+            "pred_rel": torch.tensor(pred_rel_norm, dtype=torch.float32)
         }
 
         return sample
