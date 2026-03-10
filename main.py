@@ -64,7 +64,7 @@ with torch.no_grad():
 # Visualisation Scene-Aware (Image + Matrice)
 # ==========================================
 image_path = "data/eth/visual_data/frame000000.jpg" 
-homography_path = "data/raw/all_data/H.txt"    
+homography_path = "data/H/H_eth.txt"    
 
 plt.figure(figsize=(10, 8))
 
@@ -74,18 +74,22 @@ if os.path.exists(image_path) and os.path.exists(homography_path):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     plt.imshow(img)
     
-    # Chargement de la matrice H avec numpy (gère le format scientifique e-02)
+    # 1. Chargement de la matrice H (Image -> Monde)
     H = load_homography(homography_path)
     
-    # Projection (Monde -> Image)
-    obs_img = world_to_image(obs, H)
-    pred_img = world_to_image(pred, H)
+    # 2. LA CORRECTION : Inversion de la matrice (Monde -> Image)
+    H_inv = np.linalg.inv(H)
+    
+    # 3. Projection en utilisant la matrice inversée
+    obs_img = world_to_image(obs, H_inv)
+    pred_img = world_to_image(pred, H_inv)
     
     plt.plot(obs_img[:,0], obs_img[:,1], 'bo-', label="Passé (Observé)")
     plt.plot(pred_img[:,0], pred_img[:,1], 'ro-', label="Vrai Futur (Ground Truth)")
     
     for i, pred_fake in enumerate(predictions_abs):
-        pred_fake_img = world_to_image(pred_fake, H)
+        # On utilise bien H_inv ici aussi !
+        pred_fake_img = world_to_image(pred_fake, H_inv)
         label = "Futurs Générés (GAN)" if i == 0 else ""
         plt.plot(pred_fake_img[:,0], pred_fake_img[:,1], 'go--', alpha=0.5, label=label)
 
