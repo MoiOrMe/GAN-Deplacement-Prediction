@@ -26,9 +26,9 @@ def choose_scene():
 
 def load_scene_data(scene):
     """Charger les données d'une scène"""
-    data_path = f"{scene}_Data.txt"
-    homo_path = f"{scene}_Homo.txt"
-    bg_path = f"{scene}_Bg.png"
+    data_path = f"Data/{scene}_Data.txt"
+    homo_path = f"Data/{scene}_Homo.txt"
+    bg_path = f"Data/{scene}_Bg.png"
     
     print(f"\nChargement de la scène: {scene}")
     print(f"  - Données: {data_path}")
@@ -41,6 +41,8 @@ def load_scene_data(scene):
     
     # Charger la matrice d'homographie
     H = np.loadtxt(homo_path)
+    H = np.linalg.inv(H)
+    print(f"Matrice d'homographie inversée (world-to-image):\n{H}")
     
     # Charger l'image de fond
     scene_image = cv2.imread(bg_path)
@@ -55,27 +57,48 @@ dataset, H, scene_image = load_scene_data(scene)
 # Extraire un échantillon
 sample = dataset[0]
 
+print(f"Échantillon sélectionné: {sample}")
 obs = sample["obs_abs"].numpy()
 pred = sample["pred_abs"].numpy()
 
-# Visualiser en coordonnées monde
-plt.figure()
-plt.plot(obs[:,0], obs[:,1], 'bo-', label="Observed")
-plt.plot(pred[:,0], pred[:,1], 'ro-', label="Future")
-plt.legend()
-plt.title("Trajectory (World coordinates)")
-plt.show()
+# Créer une figure avec 2 sous-graphiques côte à côte
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+# Visualiser en coordonnées monde (gauche)
+ax1.plot(obs[:,0], obs[:,1], 'bo-', label="Observed")
+ax1.plot(pred[:,0], pred[:,1], 'ro-', label="Future")
+ax1.legend()
+ax1.set_title("Trajectory (World coordinates)")
+ax1.set_xlabel("X (meters)")
+ax1.set_ylabel("Y (meters)")
+ax1.grid(True)
 
 # Projeter sur l'image
 obs_img = world_to_image(obs, H)
 pred_img = world_to_image(pred, H)
 
-# Visualiser sur l'image de fond
-plt.figure()
-plt.imshow(scene_image)
-plt.plot(obs_img[:,0], obs_img[:,1], 'bo-', label="Observed")
-plt.plot(pred_img[:,0], pred_img[:,1], 'ro-', label="Future")
-plt.legend()
-plt.title("Projection test")
+# Debug: Afficher les coordonnées projetées
+# print(f"Coordonnées projetées - Obs: min={obs_img.min():.2f}, max={obs_img.max():.2f}")
+# print(f"Coordonnées projetées - Pred: min={pred_img.min():.2f}, max={pred_img.max():.2f}")
+# print(f"Échantillon obs_img: {obs_img[:3]}")
+# print(f"Échantillon pred_img: {pred_img[:3]}")
+# print(f"Taille image: {scene_image.shape}")
+
+# Corriger l'axe Y si nécessaire (images ont Y=0 en haut)
+if obs_img[:,1].mean() < scene_image.shape[0] / 2:  # Si en moyenne en haut
+    print("Correction de l'axe Y (inversion)")
+    obs_img[:,1] = scene_image.shape[0] - obs_img[:,1]
+    pred_img[:,1] = scene_image.shape[0] - pred_img[:,1]
+
+# Visualiser sur l'image de fond (droite)
+ax2.imshow(scene_image)
+ax2.plot(obs_img[:,0], obs_img[:,1], 'bo-', label="Observed")
+ax2.plot(pred_img[:,0], pred_img[:,1], 'ro-', label="Future")
+ax2.legend()
+ax2.set_title("Projection on Scene Image")
+ax2.set_xlabel("X (pixels)")
+ax2.set_ylabel("Y (pixels)")
+
+plt.tight_layout()
 plt.show()
 

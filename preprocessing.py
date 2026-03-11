@@ -71,10 +71,10 @@ class ETHDataset(Dataset):
         pred_rel = pred - last_obs
 
         sample = {
-            "obs_abs": torch.tensor(obs, dtype=torch.float32),
-            "pred_abs": torch.tensor(pred, dtype=torch.float32),
-            "obs_rel": torch.tensor(obs_rel, dtype=torch.float32),
-            "pred_rel": torch.tensor(pred_rel, dtype=torch.float32)
+            "obs_abs": torch.tensor(obs, dtype=torch.float32),      # coordonnées absolues observées
+            "pred_abs": torch.tensor(pred, dtype=torch.float32),    # coordonnées absolues prédites
+            "obs_rel": torch.tensor(obs_rel, dtype=torch.float32),  # coordonnées relatives observées
+            "pred_rel": torch.tensor(pred_rel, dtype=torch.float32) # coordonnées relatives prédites
         }
 
         return sample
