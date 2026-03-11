@@ -10,7 +10,7 @@ def choose_scene():
     print("1. Eth")
     print("2. Zara01")
     print("3. Zara02")
-    print("4. Univ")
+    print("4. Hotel")
     
     choice = input("Entrez votre choix (1-4) ou le nom de la scène : ").strip()
     
@@ -18,7 +18,7 @@ def choose_scene():
         "1": "Eth",
         "2": "Zara01",
         "3": "Zara02",
-        "4": "Univ"
+        "4": "Hotel"
     }
     
     scene = scene_map.get(choice, choice)
